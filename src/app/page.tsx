@@ -9,12 +9,22 @@ export default function Page() {
   const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [error, setError] = useState<string>();
+  
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/items')
       .then(res => (res.ok ? res.json() : Promise.reject('Gagal memuat data')))
-      .then(data => setItems(data))
-      .catch(err => setError(String(err)));
+      .then(data => {
+        setItems(data);
+      })
+      .catch(err => {
+        setError(String(err));
+      })
+     
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
 
   const handleDelete = async (id: string) => {
@@ -22,7 +32,7 @@ export default function Page() {
     setItems(items.filter(x => x.id !== id));
   };
 
-  const handleEdit = (id: string) => {
+  const handleEdit = (id:string) => {
     router.push(`/items/${id}`);
   };
 
@@ -35,29 +45,36 @@ export default function Page() {
         </Link>
       </div>
 
-      {error && (
+  
+      {isLoading ? (
+        <div className="d-flex justify-content-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      ) : error ? (
         <div className="alert alert-danger" role="alert">
           {error}
         </div>
+      ) : (
+        <ul className="list-group">
+          {items.map(item => (
+            <li key={item.id} className="list-group-item d-flex justify-content-between align-items-center">
+              <Link href={`/items/${item.id}`} className="text-decoration-none fw-semibold">
+                {item.title}
+              </Link>
+              <div className="btn-group">
+                <button onClick={() => handleEdit(item.id)} className="btn btn-sm btn-warning">
+                  Edit
+                </button>
+                <button onClick={() => handleDelete(item.id)} className="btn btn-sm btn-danger">
+                  Hapus
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
-
-      <ul className="list-group">
-        {items.map(item => (
-          <li key={item.id} className="list-group-item d-flex justify-content-between align-items-center">
-            <Link href={`/items/${item.id}`} className="text-decoration-none fw-semibold">
-              {item.title}
-            </Link>
-            <div className="btn-group">
-              <button onClick={() => handleEdit(item.id)} className="btn btn-sm btn-warning">
-                Edit
-              </button>
-              <button onClick={() => handleDelete(item.id)} className="btn btn-sm btn-danger">
-                Hapus
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
